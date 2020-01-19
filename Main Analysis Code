@@ -1,0 +1,136 @@
+#Code written for comparing presence and activity patterns of melanistic and non-melanistic jaguar and oncilla
+
+#Important Note: Set timezone on computer to desired timezone for correct sunTime function calculation. Have not ironed out the designation of the timezone in the POSIXct and sunTime functions. 
+#Important Note: Need function found in file "Functions Used for Melanistic Analysis"
+#data structure -columns needed:
+  #Coloring: designation of record as "Melanistic" or "Non-melanistic"
+  #Date: date of observation in format %m/%d/%Y
+  #Time: time of record in decimal format
+  #Independent: with designations  as "Yes" for observations of the same species at the same camera within 30 minutes or "No" for non-independent data
+#Longitude: in decimal degrees
+#Latitude: in decimal degrees
+
+library(ggplot2)#
+library(overlap)#
+library(suncalc)#
+library(circular)#
+library(extrafont)#
+loadfonts(device="win")#
+#data cleaning and conversion ----
+data <- read.csv("~/College/Mooring Research/2019/Data Files/Melanistic Analysis/Jaguar CSV 9-23-19.csv", sep=",", stringsAsFactors = F)
+
+data <- data[data$Independent == "Yes",]# remove data of same species at same camera within 30 minutes (designated independent or not in Camera Base (Tobler, 2015))
+
+data <- data[!is.na(data$Time),]
+
+##converts decimal time into radians
+max.time <- max(data$Time)
+if (max.time > 12 & max.time <= 24) {
+  data["TimeRad"] <- data$Time*2*pi/24
+} else if (max.time <= 1) {     
+  data["TimeRad"] <- data$Time*2*pi
+} else print("Unknown time format.")
+
+
+data["Date"] <- as.Date(data$Date, "%m/%d/%Y")
+data["Lunar"] <- (getMoonIllumination(data$Date, "phase")[,2])*2*pi #calculates lunar phase and converts to radians
+data["Date"] <- as.POSIXct(data$Date, format="%Y-%m-%d", tx="CST") #sets to posix format for sunTime function
+
+##calculates sunrise and sunset (run to ensure that timezone is correctly set)
+data["sunrise"] <- maptools::sunriset(sp::SpatialPoints(matrix(c(data$Longitude,data$Latitude),ncol=2), proj4string=sp::CRS("+proj=longlat +datum=WGS84")), data$Date, direct = "sunrise", POSIXct.out=TRUE)$time 
+data["sunset"] <- maptools::sunriset(sp::SpatialPoints(matrix(c(data$Longitude,data$Latitude),ncol=2), proj=sp::CRS("+proj=longlat +datum=WGS84")), data$Date, direct = "sunset", POSIXct.out=TRUE)$time
+
+
+data["sunRad"] <- sunTime(data$Time.In.Radians, data$Date, sp::SpatialPoints(matrix(c(data$Longitude,data$Latitude),ncol=2), proj=sp::CRS("+proj=longlat +datum=WGS84"))) #calculates time in radians for time of day using individual coordinates to find exact sunrise and sunset
+
+data["DNsun"] <-  ifelse(data$sunRad>=(3*pi/2)|data$sunRad<(pi/2),"Night", ifelse(data$sunRad>=(pi/2)&data$sunRad<(3*pi/2), "Day", "NA")) #divides observations into time of day (only night and day, not crepuscular) using radian time based on sunrise and sunset (found with sunTime)
+
+
+#Creates table of proportions by color and night/day designation----
+table.Col <- data.frame(table(data$Coloring, data$DNsun))
+
+table.Col <- table.Col[table.Col$Freq != 0, ] #removes any designations with no observations (problem if using crepuscular designation)
+colnames(table.Col) <- c("Coloring", "Time", "Obs")
+
+#Calculates proportion for each time out of total for each color
+table.Col[table.Col$Coloring == "Melanistic","Prop"] <- table.Col[table.Col$Coloring == "Melanistic","Obs"]/sum(table.Col[table.Col$Coloring=="Melanistic",]$Obs) 
+table.Col[table.Col$Coloring == "Non-melanistic","Prop"] <- table.Col[table.Col$Coloring == "Non-melanistic","Obs"]/sum(table.Col[table.Col$Coloring=="Non-melanistic",]$Obs)
+
+#Coefficient of Overlapping and Statistics Calculation comparing melanistic and non-melanistic----
+numboot = 10000 #number of repetitions for calculation of confidence interval, W statistic p-value, chi square p-value
+stats <- rbind(overall(data[data$Coloring=="Melanistic","sunRad"],data[data$Coloring=="Non-melanistic", "sunRad"]), overall(data[data$Coloring=="Melanistic" & data$DNsun == "Night","Lunar"],data[data$Coloring=="Non-melanistic" & data$DNsun == "Night", "Lunar"])) #calculates coefficient of overlapping, confidence interval for coefficient, Watson statistic, Watson p-value, W statistic, W p-value, Chi Square p-value for circadian and lunar (only night observations)
+
+
+#Bar Plots ----
+#bar plot showing proportions of coloring and night/day designation
+gg<- ggplot(data=table.Col, aes(x=Coloring, y=Prop, fill=Time)) + geom_bar(stat="identity", position="dodge", color="black") + scale_fill_manual(values=c("white","black")) + theme_mooring() + labs(x=element_blank(), y="Proportion of Observations") + scale_y_continuous(limits = c(0,0.6),expand=c(0,0),breaks=c(0.0,0.2,0.4,0.6)) + scale_x_discrete(expand=c(0.5,0), labels = c("Melanistic", "Non-Melanistic"))
+
+ggsave("Bar Plot Proportion.jpg",plot=gg,width=12,height=9,dpi=800, family="Calibri")
+
+#bar plot showing number of observations of coloring and night/day designation
+gg <- ggplot(data=table.Col, aes(x=Coloring, y=Obs, fill=Time)) +geom_bar(stat="identity", position = "dodge", color="black") + scale_fill_manual(values=c("white","black"))  + theme_mooring() + labs(x=element_blank(), y="Number of Observations") + scale_y_continuous(limits = c(0,40),expand=c(0,0)) + scale_x_discrete(expand=c(0.5,0), labels = c("Melanistic", "Non-Melanistic"))
+
+ggsave("Bar Plot Number.jpg",plot=gg,width=12,height=9,dpi=800, family="Calibri")
+
+#Activity Pattern Plots ----
+#Circadian activity pattern plot using custom overlapPlot function (package overlap (Ridout & Meredith, 2018)) with night hours shaded
+opar <- par()
+jpeg("Circadian Activity Pattern.jpg", width=9200, height=6200, res=800)
+par(ps=40, lwd=1.5, mar=c(6.5,8.5,3,2), cex.axis=0.7, mgp=c(5,1.5,0))
+overlapPlotCustom(
+  data[data$Coloring=="Melanistic","sunRad"]
+  ,data[data$Coloring=="Non-melanistic", "sunRad"]
+  ,main=""
+  ,rug=TRUE
+  ,xlab="Time of Day"
+  ,xaxt="n"
+)
+axis(1, at=c(0, 6, 12, 18, 24), labels=c("midnight", "sunrise", "noon", "sunset", "midnight")) #new axis based on sunrise and sunset for sunTime function calculation
+
+par(xpd=TRUE)#allows text to be plotted outside of plot region
+legend("topleft", legend = c(paste0("Melanistic"," n=",length(data[data$Coloring=="Melanistic","sunRad"])), paste0("Non-Melanistic"," n=",length(data[data$Coloring=="Non-melanistic", "sunRad"]))), bty="n", pt.lwd=0.7,seg.len=5, col=c("black", "blue"), lty=c(1,2), cex=0.5, y.intersp=3,inset=c(0,-0.075), ncol=2,lwd=3, text.width=c(0,0.1+strwidth(paste0("Melanistic"," n=",length(data[data$Coloring=="Melanistic","sunRad"])),units="user", cex=0.5))) #adds legend outside of plot area with sample size of coloring
+
+mtext(substitute(paste(Delta, "=", x), list(x=round(stats$CI.Estimate[1],2))), side=3,adj=1, cex=0.5) #adds Coefficient of Overlapping
+
+dev.off()
+
+#Lunar Activity Plot, includes only night data
+jpeg("Lunar Activity Pattern.jpg", width=9200, height=6200, res=800)
+par(ps=40, lwd=1.5, mar=c(6.5,8.5,3,2.5), cex.axis=0.6, mgp=c(5,1.5,0))
+overlapPlot(
+  data[data$Coloring=="Melanistic" & data$DNsun == "Night","Lunar"],
+  data[data$Coloring=="Non-melanistic" & data$DNsun == "Night","Lunar"],
+  xscale =  NA,
+  xlab = "Lunar Phase",
+  xaxt = "n",
+  main="",
+  rug=TRUE
+)
+
+axis(
+  side = 1,
+  at = c(0, pi/2, pi, 3*pi/2, 2*pi),
+  pos = ,
+  labels = c("New Moon", "First Quarter", "Full Moon", "Last Quarter", "New Moon"))
+
+par(xpd=TRUE)
+legend("topleft", legend = c(paste0("Melanistic"," n=",length(data[data$Coloring=="Melanistic" & data$DNsun == "Night","Lunar"])), paste0("Non-Melanistic"," n=",length(data[data$Coloring=="Non-melanistic" & data$DNsun == "Night", "Lunar"]))), bty="n", pt.lwd=0.7,seg.len=5, col=c("black", "blue"), lty=c(1,2), cex=0.5, y.intersp=3,inset=c(0,-0.075), ncol=2,lwd=3, text.width=c(0,0.1+strwidth(paste0("Melanistic"," n=",length(data[data$Coloring=="Melanistic" & data$DNsun == "Night","Lunar"])),units="user", cex=0.5)))
+
+mtext(substitute(paste(Delta, "=", x), list(x=round(stats$CI.Estimate[2],2))), side=3,adj=1, cex=0.5) 
+dev.off()
+
+
+#test for Rao uniformity in circadian and lunar activity patterns----
+data(rao.table) #import table of Rao statistics
+rao.stats <- data.frame(color=c("Melanistic", "Non-melanistic", "Melanistic","Non-melanistic"), type=c("sunTime", "sunTime","Lunar","Lunar"),statistic="",n="",pvalue="",stringsAsFactors = F) #builds empty data table
+
+rao.stats$statistic <- c(rao.spacing.test(circular(data[data$Coloring=="Melanistic","sunRad"], units="radians"), alpha=0)$statistic, rao.spacing.test(circular(data[data$Coloring=="Non-melanistic","sunRad"], units="radians"), alpha=0)$statistic, rao.spacing.test(circular(data[data$Coloring=="Melanistic" & data$DNsun == "Night","Lunar"], units="radians"), alpha=0)$statistic, rao.spacing.test(circular(data[data$Coloring=="Non-melanistic" & data$DNsun == "Night","Lunar"], units="radians"), alpha=0)$statistic) #calculates Rao statistic
+
+rao.stats$n <- c(rao.spacing.test(circular(data[data$Coloring=="Melanistic","sunRad"], units="radians"), alpha=0)$n, rao.spacing.test(circular(data[data$Coloring=="Non-melanistic","sunRad"], units="radians"), alpha=0)$n, rao.spacing.test(circular(data[data$Coloring=="Melanistic" & data$DNsun == "Night","Lunar"], units="radians"), alpha=0)$n, rao.spacing.test(circular(data[data$Coloring=="Non-melanistic" & data$DNsun == "Night","Lunar"], units="radians"), alpha=0)$n) #calculates sample size to be used in Rao p-value calculation
+
+#Calculates Rao p-value separates so can obtain the p-value range rather than just being printed out
+rao.stats[1,5]<-pvalueRAO(rao.stats[1,3], rao.stats[1,4])
+rao.stats[2,5]<-pvalueRAO(rao.stats[2,3], rao.stats[2,4])
+rao.stats[3,5]<-pvalueRAO(rao.stats[3,3], rao.stats[3,4])
+rao.stats[4,5]<-pvalueRAO(rao.stats[4,3], rao.stats[4,4])
+
