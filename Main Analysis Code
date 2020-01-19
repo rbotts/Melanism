@@ -41,7 +41,7 @@ data["sunrise"] <- maptools::sunriset(sp::SpatialPoints(matrix(c(data$Longitude,
 data["sunset"] <- maptools::sunriset(sp::SpatialPoints(matrix(c(data$Longitude,data$Latitude),ncol=2), proj=sp::CRS("+proj=longlat +datum=WGS84")), data$Date, direct = "sunset", POSIXct.out=TRUE)$time
 
 
-data["sunRad"] <- sunTime(data$Time.In.Radians, data$Date, sp::SpatialPoints(matrix(c(data$Longitude,data$Latitude),ncol=2), proj=sp::CRS("+proj=longlat +datum=WGS84"))) #calculates time in radians for time of day using individual coordinates to find exact sunrise and sunset
+data["sunRad"] <- sunTime(data$TimeRad, data$Date, sp::SpatialPoints(matrix(c(data$Longitude,data$Latitude),ncol=2), proj=sp::CRS("+proj=longlat +datum=WGS84"))) #calculates time in radians for time of day using individual coordinates to find exact sunrise and sunset
 
 data["DNsun"] <-  ifelse(data$sunRad>=(3*pi/2)|data$sunRad<(pi/2),"Night", ifelse(data$sunRad>=(pi/2)&data$sunRad<(3*pi/2), "Day", "NA")) #divides observations into time of day (only night and day, not crepuscular) using radian time based on sunrise and sunset (found with sunTime)
 
