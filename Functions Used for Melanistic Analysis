@@ -1,7 +1,7 @@
 #Functions ----
 overlapCI <- function(animal1, animal2) {
   #data divided corresponding to each calculation as suggested by Ridout & Linkie, 2009
-  if (min(length(animal1), length(animal2)) <= 75 & min(length(animal1), length(animal2)) > 15) {
+  if (min(length(animal1), length(animal2)) <= 75 & min(length(animal1), length(animal2)) > 20) {
     
     ovlEstimate <- overlapEst(animal1, animal2, adjust=c(0.8, NA, NA))[1]
     
@@ -41,7 +41,7 @@ overlapCI <- function(animal1, animal2) {
       row.names = NULL
     ))
     
-  } else {    #Probably not used because eliminate any sample size that is less than or equal to 15
+  } else {    #Probably not used because eliminate any sample size that is less than or equal to 20
     ovlEstimate=NA
     ovlLower=NA
     ovlUpper=NA
