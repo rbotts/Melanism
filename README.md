@@ -10,9 +10,9 @@ Two files needed:
 
 Data not included. Data used in this was data obtained from camera trap photos with date and time recorded. 
 Columns needed for this analys:
-  #Coloring: designation of record as "Melanistic" or "Non-melanistic"
-  #Date: date of observation in format %m/%d/%Y
-  #Time: time of record in decimal format
-  #Independent: with designations  as "Yes" for observations of the same species at the same camera within 30 minutes or "No" for non-independent data
-  #Longitude: in decimal degrees
-  #Latitude: in decimal degrees
+  -Coloring: designation of record as "Melanistic" or "Non-melanistic"
+  -Date: date of observation in format %m/%d/%Y
+  -Time: time of record in decimal format
+  -Independent: with designations  as "Yes" for observations of the same species at the same camera within 30 minutes or "No" for non-independent data
+  -Longitude: in decimal degrees
+  -Latitude: in decimal degrees
