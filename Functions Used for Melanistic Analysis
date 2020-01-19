@@ -287,7 +287,7 @@ overall<-function(animal1, animal2){
   
   W<-w.prob(animal1,animal2)
   
-  Chi2Pvalue<- chisquared(animal1,animal2)
+  Chi2Pvalue<- chisquare(animal1,animal2)
   
   statistics <-
     data.frame(
@@ -319,6 +319,7 @@ theme_mooring <- function() {
     ) 
 }
 pvalueRAO <- function(U,n){
+#code taken from function print.rao.spacing.test (Agostinelli, 2007) and adapted to save p-value range into data frame
   if (n <= 30)
     table.row <- n - 3
   else if (n <= 32)
