@@ -41,7 +41,7 @@ Columns needed for this analysis:
  - chisquare*: calculates fisher test statistic (determined fisher test was better for general activity pattern analysis as the majority of species vectors did not meet assumptions for chi-square. 
  - overall: function that runs all functions above given two vectors of observations to compare
  - theme_mooring: theme for bar plots
- - pvalueRAO: function print.rao.spacing.test altered to save p-value range into data frame (Agostinelli & Lund). From package Circular (2017).
+ - pvalueRAO: function print.rao.spacing.test altered to save p-value range into data frame (Agostinelli, 2007). From package Circular (2017).
  ```
   * means written by TJ Weigman
   ```
