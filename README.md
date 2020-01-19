@@ -2,15 +2,16 @@
 All code used in the analysis of melanistic vs. non-melanistic jaguar and oncilla. 
 
 ## Overview
-### Two files needed to run:
+### Two files needed to run together:
 
-- Main Melanistic Analysis: includes all the code for cleaning data, analyzes and plots
+- Main Melanistic Analysis: includes all the code for cleaning, analyzing and plotting data
 - Functions Used for Melanistic Analysis: all custom background functions used on Main Melanistic Analysis
-
-### Data not included. 
+```
+### Important Note: Data not included. 
+```
 Data used in this was data obtained from camera trap photos with date and time recorded. 
 
-Columns needed for this analys:
+Columns needed for this analysis:
   - Coloring: designation of record as "Melanistic" or "Non-melanistic"
   - Date: date of observation in format %m/%d/%Y
   - Time: time of record in decimal format
@@ -19,7 +20,9 @@ Columns needed for this analys:
   - Latitude: in decimal degrees
 
 ## Main Melanistic Analysis
+
 ### Important Note: Set timezone on computer to desired timezone for correct sunTime function calculation. Have not ironed out the designation of the timezone in the POSIXct and sunTime functions. 
+
 - cleans data 
 - calculats time in radians based on exact sunrise and sunset using sunTime function from overlap package (Meredith & Linkie, 2018)
 - calculates Coefficient of Overlapping and related statistics using overlap package
@@ -39,7 +42,9 @@ Columns needed for this analys:
  - overall: function that runs all functions above given two vectors of observations to compare
  - theme_mooring: theme for bar plots
  - pvalueRAO: function print.rao.spacing.test altered to save p-value range into data frame (Agostinelli & Lund). From package Circular (2017).
-  ### * means written by TJ Weigman
+ ```
+  * means written by TJ Weigman
+  ```
  ## Authors
  - Amy Eppert (Student in Department of Biology, Point Loma Nazarene University)
  - TJ Weigman (Student in Department of Physics and Engineering, Point Loma Nazarene University)
