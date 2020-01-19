@@ -7,7 +7,7 @@ All code used in the analysis of melanistic vs. non-melanistic jaguar and oncill
 - Main Melanistic Analysis: includes all the code for cleaning, analyzing and plotting data
 - Functions Used for Melanistic Analysis: all custom background functions used on Main Melanistic Analysis
 ```
-### Important Note: Data not included. 
+Important Note: Data not included. 
 ```
 Data used in this was data obtained from camera trap photos with date and time recorded. 
 
@@ -48,4 +48,4 @@ Columns needed for this analysis:
  ## Authors
  - Amy Eppert (Student in Department of Biology, Point Loma Nazarene University)
  - TJ Weigman (Student in Department of Physics and Engineering, Point Loma Nazarene University)
-    -Initial functions for Coefficient of Overlapping and related statistics
+    - Initial functions for Coefficient of Overlapping and related statistics
